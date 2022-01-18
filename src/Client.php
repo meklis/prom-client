@@ -72,10 +72,16 @@ class Client
     {
         $client = clone $this->multiCurl;
         foreach ($queries as $query) {
+            $labels = [];
+            if(!is_string($query) && is_array($query)) {
+                $labels = $query['labels'];
+                $query = $query['query'];
+            }
             $request = [
                 'query' => $query,
                 'time' => $time !== null ? $time : time(),
             ];
+            $request = array_merge($request, $labels);
             $curl = $client->addPost('/api/v1/query', $request);
             $curl->request = $request;
         }
