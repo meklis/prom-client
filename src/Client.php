@@ -124,12 +124,18 @@ class Client
     {
         $client = clone $this->multiCurl;
         foreach ($queries as $query) {
+            $labels = [];
+            if(!is_string($query) && is_array($query)) {
+                $labels = $query['labels'];
+                $query = $query['query'];
+            }
             $request = [
                 'query' => $query,
                 'start' => $start !== null ? $start : time() - (60 * 60 * 24),
                 'end' => $end !== null ? $end : time(),
                 'step' => $step,
             ];
+            $request = array_merge($request, $labels);
             $curl = $client->addPost('/api/v1/query_range', $request);
             $curl->request = $request;
         }
