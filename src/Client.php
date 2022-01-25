@@ -7,15 +7,9 @@ use Curl\MultiCurl;
 
 class Client
 {
-    /**
-     * @var MultiCurl
-     */
-    protected $multiCurl;
 
-    /**
-     * @var Curl
-     */
-    protected $curl;
+    protected $baseUrl;
+    protected $timeout;
 
     /**
      *
@@ -25,19 +19,35 @@ class Client
      */
     function __construct($baseUrl, $timeout = 30)
     {
-        $client = new MultiCurl($baseUrl);
-        $client->setTimeout($timeout);
-        $this->multiCurl = $client;
-        $this->multiCurl->setHeader('Content-Type', 'application/x-www-form-urlencoded');
-        $this->multiCurl->setJsonDecoder(function ($response) {
-            return json_decode($response, true);
-        });
+        $this->baseUrl = $baseUrl;
+        $this->timeout = $timeout;
+    }
 
-        $this->curl = new Curl($baseUrl);
-        $this->curl->setHeader('Content-Type', 'application/x-www-form-urlencoded');
-        $this->curl->setJsonDecoder(function ($response) {
+    /**
+     * @return Curl
+     * @throws \ErrorException
+     */
+    function getCurlClient() {
+       $curl = new Curl($this->baseUrl);
+        $curl->setTimeout($this->timeout);
+        $curl->setHeader('Content-Type', 'application/x-www-form-urlencoded');
+        $curl->setJsonDecoder(function ($response) {
             return json_decode($response, true);
         });
+        return $curl;
+    }
+
+    /**
+     * @return MultiCurl
+     */
+    function getMultiCurlClient() {
+        $client = new MultiCurl($this->baseUrl);
+        $client->setTimeout($this->timeout);
+        $client->setHeader('Content-Type', 'application/x-www-form-urlencoded');
+        $client->setJsonDecoder(function ($response) {
+            return json_decode($response, true);
+        });
+        return $client;
     }
 
     /**
@@ -50,7 +60,7 @@ class Client
      */
     function query(string $query, ?int $time = null)
     {
-        $client = clone $this->multiCurl;
+        $client = $this->getMultiCurlClient();
         $request = [
             'query' => $query,
             'time' => $time !== null ? $time : time(),
@@ -70,7 +80,7 @@ class Client
      */
     function queries(array $queries, ?int $time = null)
     {
-        $client = clone $this->multiCurl;
+        $client = $this->getMultiCurlClient();
         foreach ($queries as $query) {
             $labels = [];
             if(!is_string($query) && is_array($query)) {
@@ -102,7 +112,7 @@ class Client
      */
     function queryRange(string $query, ?int $start = null, ?int $end = null, string $step = '1m')
     {
-        $client = clone $this->multiCurl;
+        $client = $this->getMultiCurlClient();
         $request = [
             'query' => $query,
             'start' => $start !== null ? $start : time() - (60 * 60 * 24),
@@ -128,7 +138,7 @@ class Client
      */
     function queriesRange(array $queries, ?int $start = null, ?int $end = null, string $step = '1m')
     {
-        $client = clone $this->multiCurl;
+        $client = $this->getMultiCurlClient();
         foreach ($queries as $query) {
             $labels = [];
             if(!is_string($query) && is_array($query)) {
@@ -158,7 +168,7 @@ class Client
      */
     function labels(?int $start = null, ?int $end = null)
     {
-        $client = clone $this->curl;
+        $client = $this->getCurlClient();
         $request = [
             'start' => $start !== null ? $start : time() - (60 * 60 * 24),
             'end' => $end !== null ? $end : time(),
@@ -179,7 +189,7 @@ class Client
      */
     function labelValues($labelName, ?int $start = null, ?int $end = null, $match = [])
     {
-        $client = clone $this->curl;
+        $client = $this->getCurlClient();
         $request = [
             'start' => $start !== null ? $start : time() - (60 * 60 * 24),
             'end' => $end !== null ? $end : time(),
@@ -198,7 +208,7 @@ class Client
      */
     function targets($state = null)
     {
-        $client = clone $this->curl;
+        $client = $this->getCurlClient();
         $request = [];
         if ($state) {
             $request['state'] = $state;
@@ -216,7 +226,7 @@ class Client
      */
     function rules()
     {
-        $client = clone $this->curl;
+        $client = $this->getCurlClient();
         $request = [];
         $curl = $client->post('/api/v1/rules', $request);
         return $curl;
@@ -231,7 +241,7 @@ class Client
      */
     function alerts()
     {
-        $client = clone $this->curl;
+        $client = $this->getCurlClient();
         $request = [];
         $curl = $client->post('/api/v1/alerts', $request);
         return $curl;
@@ -245,7 +255,7 @@ class Client
      */
     function alertmanagers()
     {
-        $client = clone $this->curl;
+        $client = $this->getCurlClient();
         $request = [];
         $curl = $client->post('/api/v1/alertmanagers', $request);
         return $curl;
