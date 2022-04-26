@@ -281,8 +281,14 @@ class Client
         return $responses;
     }
 
-    protected function catchError(Curl $instance)
+      protected function catchError(Curl $instance)
     {
+        if(is_string($instance->response)) {
+            throw new \Exception("Client return unsupported response: {$instance->response}");
+        }
+        if(!is_array($instance->response)) {
+            throw new \Exception("Client return unsupported response: ". json_encode($instance->response));
+        }
         if ($instance->response) {
             throw new \Exception("Client return error type: {$instance->response['errorType']}, error: {$instance->response['error']}");
         }
