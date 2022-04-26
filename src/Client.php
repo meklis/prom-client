@@ -28,7 +28,7 @@ class Client
      * @throws \ErrorException
      */
     function getCurlClient() {
-       $curl = new Curl($this->baseUrl);
+       $curl = new Curl();
         $curl->setTimeout($this->timeout);
         $curl->setHeader('Content-Type', 'application/x-www-form-urlencoded');
         $curl->setJsonDecoder(function ($response) {
@@ -41,7 +41,7 @@ class Client
      * @return MultiCurl
      */
     function getMultiCurlClient() {
-        $client = new MultiCurl($this->baseUrl);
+        $client = new MultiCurl();
         $client->setTimeout($this->timeout);
         $client->setHeader('Content-Type', 'application/x-www-form-urlencoded');
         $client->setJsonDecoder(function ($response) {
@@ -65,7 +65,7 @@ class Client
             'query' => $query,
             'time' => $time !== null ? $time : time(),
         ];
-        $curl = $client->addPost('/api/v1/query', $request);
+        $curl = $client->addPost($this->baseUrl . '/api/v1/query', $request);
         $curl->request = $request;
         return $this->fetchQueryResults($client)[0];
     }
@@ -92,7 +92,7 @@ class Client
                 'time' => $time !== null ? $time : time(),
             ];
             $request = array_merge($request, $labels);
-            $curl = $client->addPost('/api/v1/query', $request);
+            $curl = $client->addPost($this->baseUrl . '/api/v1/query', $request);
             $curl->request = $request;
         }
         return $this->fetchQueryResults($client);
@@ -119,7 +119,7 @@ class Client
             'end' => $end !== null ? $end : time(),
             'step' => $step,
         ];
-        $curl = $client->addPost('/api/v1/query_range', $request);
+        $curl = $client->addPost($this->baseUrl . '/api/v1/query_range', $request);
         $curl->request = $request;
         return $this->fetchQueryResults($client)[0];
     }
@@ -152,7 +152,7 @@ class Client
                 'step' => $step,
             ];
             $request = array_merge($request, $labels);
-            $curl = $client->addPost('/api/v1/query_range', $request);
+            $curl = $client->addPost($this->baseUrl . '/api/v1/query_range', $request);
             $curl->request = $request;
         }
         return $this->fetchQueryResults($client);
@@ -173,7 +173,7 @@ class Client
             'start' => $start !== null ? $start : time() - (60 * 60 * 24),
             'end' => $end !== null ? $end : time(),
         ];
-        $curl = $client->post('/api/v1/labels', $request);
+        $curl = $client->post($this->baseUrl . '/api/v1/labels', $request);
         return $curl;
     }
 
@@ -195,7 +195,7 @@ class Client
             'end' => $end !== null ? $end : time(),
             'match' => $match,
         ];
-        $curl = $client->get("/api/v1/label/{$labelName}/values", $request);
+        $curl = $client->get($this->baseUrl . "/api/v1/label/{$labelName}/values", $request);
         return $curl;
     }
 
@@ -211,9 +211,9 @@ class Client
         $client = $this->getCurlClient();
         $request = [];
         if ($state) {
-            $request['state'] = $state;
+            $request["state"] = $state;
         }
-        $curl = $client->post('/api/v1/targets', $request);
+        $curl = $client->post($this->baseUrl . '/api/v1/targets', $request);
         return $curl;
     }
 
@@ -228,7 +228,7 @@ class Client
     {
         $client = $this->getCurlClient();
         $request = [];
-        $curl = $client->post('/api/v1/rules', $request);
+        $curl = $client->post($this->baseUrl . '/api/v1/rules', $request);
         return $curl;
     }
 
@@ -243,7 +243,7 @@ class Client
     {
         $client = $this->getCurlClient();
         $request = [];
-        $curl = $client->post('/api/v1/alerts', $request);
+        $curl = $client->post($this->baseUrl . '/api/v1/alerts', $request);
         return $curl;
     }
 
@@ -257,7 +257,7 @@ class Client
     {
         $client = $this->getCurlClient();
         $request = [];
-        $curl = $client->post('/api/v1/alertmanagers', $request);
+        $curl = $client->post($this->baseUrl . '/api/v1/alertmanagers', $request);
         return $curl;
     }
 
@@ -281,10 +281,10 @@ class Client
         return $responses;
     }
 
-      protected function catchError(Curl $instance)
+    protected function catchError(Curl $instance)
     {
         if(is_string($instance->response)) {
-            throw new \Exception("Client return unsupported response: {$instance->response}");
+            throw new \Exception("Client ({$this->baseUrl}) return unsupported response: {$instance->response}");
         }
         if(!is_array($instance->response)) {
             throw new \Exception("Client return unsupported response: ". json_encode($instance->response));
